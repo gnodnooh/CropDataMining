@@ -1,2 +1,2 @@
-# CropYeildForecast
+# CropYieldForecast
 This repository mines crop yield data from multiple sources.
