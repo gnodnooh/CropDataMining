@@ -77,8 +77,8 @@ def CreateGridBox_subextent(shp_out, extent, dx, dy, sub_extent, set_print=True)
     '''
     
     # Size of extent
-    width = (extent[1] - extent[0])/dx
-    height = (extent[3] - extent[2])/dy
+    width = np.round((extent[1] - extent[0])/dx)
+    height = np.round((extent[3] - extent[2])/dy)
     
     # Adjust sub_extent with base grid extent
     minx = extent[0] + np.floor((sub_extent[0] - extent[0])/dx)*dx
@@ -125,8 +125,58 @@ def CreateGridBox_subextent(shp_out, extent, dx, dy, sub_extent, set_print=True)
     if set_print:
         print('%s is saved.' % shp_out)
 
+        
+def CreateGridBox(shp_out, extent, dx, dy, set_print=True):
+    '''Create grid with degrees of extent, dx, dy of the target box
     
+    Parameters
+    ----------
+    extent: list
+        [minx,maxx,miny,maxy]
+    dx: value
+        degree of x
+    dy: value
+        degree of y
 
+    Returns
+    -------
+    shp_out file is created.
+    
+    
+    Source: https://gis.stackexchange.com/a/81120/29546
+    Revised by Donghoon Lee @ Aug-10-2019
+    '''
+    minx,maxx,miny,maxy = extent
+    nx = int(math.ceil(abs(maxx - minx)/dx))
+    ny = int(math.ceil(abs(maxy - miny)/dy))
+    w = shp.Writer(shp_out, shp.POLYGON)
+    w.autoBalance = 1
+    w.field("ID")
+    id=0
+    for i in range(ny):
+        for j in range(nx):
+            vertices = []
+            parts = []
+            vertices.append([min(minx+dx*j,maxx),max(maxy-dy*i,miny)])
+            vertices.append([min(minx+dx*(j+1),maxx),max(maxy-dy*i,miny)])
+            vertices.append([min(minx+dx*(j+1),maxx),max(maxy-dy*(i+1),miny)])
+            vertices.append([min(minx+dx*j,maxx),max(maxy-dy*(i+1),miny)])
+            parts.append(vertices)
+            w.poly(parts)
+            w.record(id)
+            id+=1
+    w.close()
+    
+    # Save a projection file (filename.prj)
+    filename, _ = os.path.splitext(shp_out)
+    prj = open("%s.prj" % filename, "w")
+    epsg = 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433]]' 
+    prj.write(epsg)
+    prj.close()
+    if set_print:
+        print('%s is saved.' % shp_out)
+
+    
 def save_hdf(filn, df, set_print=True):
     df.to_hdf(filn, key='df', complib='blosc:zstd', complevel=9)
     if set_print:
