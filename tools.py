@@ -7,6 +7,8 @@ import shapefile as shp
 import fiona
 from shapely.geometry import shape, mapping
 import rtree
+import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 
 
 def IntersectShapefiles(refSHP, admSHP, outSHP, set_print=True):
@@ -181,3 +183,66 @@ def save_hdf(filn, df, set_print=True):
     df.to_hdf(filn, key='df', complib='blosc:zstd', complevel=9)
     if set_print:
         print('%s is saved.' % filn)
+        
+        
+# Colarmap and Colorbar controller
+def cbarpam(bounds, color, labloc='on', boundaries=None, extension=None):
+    '''Returns parameters for colormap and colorbar objects with a specified style.
+
+        Parameters
+        ----------
+        bounds: list of bounds
+        color: name of colormap or list of color names
+
+        labloc: 'on' or 'in'
+        boundaries: 
+        extension: 'both', 'min', 'max'
+
+        Return
+        ------
+        cmap: colormap
+        norm: nomalization
+        vmin: vmin for plotting
+        vmax: vmax for plotting
+        boundaries: boundaries for plotting
+        
+        Donghoon Lee @ Mar-15-2020
+    '''
+    
+    gradient = np.linspace(0, 1, len(bounds)+1)
+    # Create colorlist
+    if type(color) is list:
+        cmap = colors.ListedColormap(color,"")
+    elif type(color) is str:
+        cmap = plt.get_cmap(color, len(gradient))    
+        # Extension
+        colorsList = list(cmap(np.arange(len(gradient))))
+        if extension is 'both':
+            cmap = colors.ListedColormap(colorsList[1:-1],"")
+            cmap.set_under(colorsList[0])
+            cmap.set_over(colorsList[-1])
+        elif extension is 'max':
+            cmap = colors.ListedColormap(colorsList[:-1],"")
+            cmap.set_over(colorsList[-1])
+        elif extension is 'min':
+            cmap = colors.ListedColormap(colorsList[1:],"")
+            cmap.set_under(colorsList[0])
+        elif extension is None:
+            gradient = np.linspace(0, 1, len(bounds)-1)
+            cmap = plt.get_cmap(color, len(gradient))
+        else:
+            raise ValueError('Check the extension')
+    else:
+        raise ValueError('Check the type of color.')
+    # Normalization
+    norm = colors.BoundaryNorm(bounds, cmap.N)
+    # vmin and vmax
+    vmin=bounds[0]
+    vmax=bounds[-1]
+    # Ticks
+    if labloc == 'on':
+        ticks = bounds
+    elif labloc == 'in':
+        ticks = np.array(bounds)[0:-1] + (np.array(bounds)[1:] - np.array(bounds)[0:-1])/2
+    
+    return cmap, norm, vmin, vmax, ticks, boundaries
