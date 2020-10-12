@@ -246,3 +246,8 @@ def cbarpam(bounds, color, labloc='on', boundaries=None, extension=None):
         ticks = np.array(bounds)[0:-1] + (np.array(bounds)[1:] - np.array(bounds)[0:-1])/2
     
     return cmap, norm, vmin, vmax, ticks, boundaries
+
+
+def split(a, n):
+    k, m = divmod(len(a), n)
+    return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
